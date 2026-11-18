@@ -1,0 +1,22 @@
+# Maven #
+target/
+
+# IDEA #
+.idea/
+*.iml
+
+# Eclipse #
+.settings/
+.classpath
+.project
+# Local secrets and generated files
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.yaml
+*.pem
+*.key
+*.log
+__pycache__/
+*.pyc
