@@ -155,7 +155,7 @@ mvn "-Ddocker.skip=true" "-DskipTests=false" "-Dtest=AdminCacheInvalidationServi
 - 启动打包后的两个服务，后台 / 商城 Swagger 页面和分组文档可用，分别包含 160 / 65 个接口；演示管理员登录、带 JWT 的商品查询、演示会员登录和首页数据读取通过。
 - YAML 配置语法及文档本地链接检查通过。
 
-当前机器未安装 Docker，因此 **Dockerfile / Compose 尚未在本机进行容器实跑验收**，MySQL 8.0 容器初始化也未单独实测。上述 Java 运行验证使用新建数据库及已有 Redis，并关闭验证进程的 RabbitMQ 消费；本次未重新执行下单、第三方支付、MinIO 上传或 Elasticsearch 搜索链路。运行环境与验证范围在这里明确列出，不将配置文件检查等同于容器运行通过。
+开发环境的 Docker 安装在 VMware Linux 虚拟机中，既有 Redis、RabbitMQ 由其运行；Windows 当前终端没有可用的 Docker CLI。本次发布的 **Dockerfile / Compose 尚未在该虚拟机中进行完整容器实跑验收**，MySQL 8.0 容器初始化也未单独实测。上述 Java 运行验证使用新建数据库及已有 Redis，并关闭验证进程的 RabbitMQ 消费；本次未重新执行下单、第三方支付、MinIO 上传或 Elasticsearch 搜索链路。运行环境与验证范围在这里明确列出，不将配置文件检查等同于容器运行通过。
 
 ## 扩展模块与功能边界
 
