@@ -1,0 +1,36 @@
+# Local demo profile; matches compose.yaml. Never use these demo credentials in production.
+server:
+  port: ${MALL_ADMIN_PORT:8080}
+spring:
+  datasource:
+    url: jdbc:mysql://${MALL_DB_HOST:localhost}:${MALL_DB_PORT:13306}/${MALL_DB_NAME:mall}?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MALL_DB_USER:mall}
+    password: ${MALL_DB_PASSWORD:mall-local-only}
+    druid:
+      initial-size: 2
+      min-idle: 2
+      max-active: 10
+      stat-view-servlet:
+        enabled: false
+  data:
+    redis:
+      host: ${MALL_REDIS_HOST:localhost}
+      port: ${MALL_REDIS_PORT:16379}
+      database: 0
+      password: ${MALL_REDIS_PASSWORD:}
+      timeout: 2s
+jwt:
+  secret: ${MALL_JWT_SECRET:local-demo-only-change-before-deployment-0123456789-abcdefghijklmnopqrstuvwxyz}
+logging:
+  level:
+    root: info
+    com.macro.mall: info
+logstash:
+  host: localhost
+  enableInnerLog: false
+minio:
+  endpoint: ${MALL_MINIO_ENDPOINT:http://localhost:19000}
+  public-endpoint: ${MALL_MINIO_PUBLIC_ENDPOINT:http://localhost:19000}
+  bucketName: mall
+  accessKey: ${MALL_MINIO_ACCESS_KEY:mall-local}
+  secretKey: ${MALL_MINIO_SECRET_KEY:mall-minio-local-only}

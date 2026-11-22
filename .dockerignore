@@ -1,0 +1,9 @@
+.git
+.idea
+**/target
+**/node_modules
+**/*.log
+.env
+.env.*
+!.env.example
+document/verification/results

@@ -1,12 +1,13 @@
 """本地有限并发下单实验；通过真实接口下单/关单，SQL仅准备独立购物车及对账。
 
-依赖 PyMySQL、PyYAML。密码交互输入，报告不记录密码、token 或数据库凭据。
+依赖 PyMySQL。密码交互输入，报告不记录密码、token 或数据库凭据。
 """
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import getpass
 import json
+import os
 from pathlib import Path
 import threading
 import time
@@ -16,7 +17,6 @@ import urllib.request
 import uuid
 
 import pymysql
-import yaml
 
 
 def main():
@@ -25,21 +25,29 @@ def main():
     parser.add_argument('--requests', type=int, default=10)
     parser.add_argument('--quantity', type=int, default=1)
     parser.add_argument('--sku-id', type=int, default=245)
-    parser.add_argument('--address-id', type=int, default=8)
-    parser.add_argument('--username', default='learn_stock')
+    parser.add_argument('--address-id', type=int, help='默认选择测试会员的首个收货地址')
+    parser.add_argument('--username', default='demo')
+    parser.add_argument('--db-port', type=int, default=int(os.environ.get('MALL_DB_PORT', '13306')))
+    parser.add_argument('--db-user', default=os.environ.get('MALL_DB_USER', 'mall'))
+    parser.add_argument('--base-url', default='http://localhost:8085')
     args = parser.parse_args()
     if not 2 <= args.requests <= 20 or args.quantity < 1:
         parser.error('请求数必须在2～20之间，购买数量必须为正数')
 
     repo = Path(__file__).resolve().parents[2]
-    cfg = yaml.safe_load((repo / 'mall-portal/src/main/resources/application-dev.yml').read_text(encoding='utf-8'))
-    ds = cfg['spring']['datasource']
-    if not ds['url'].startswith('jdbc:mysql://localhost:3306/mall?'):
-        raise RuntimeError('脚本仅允许项目当前的本机localhost:3306/mall测试库')
-    conn = pymysql.connect(host='localhost', port=3306, user=ds['username'],
-                           password=str(ds['password']), database='mall', charset='utf8mb4',
+    if args.db_port not in (3306, 13306):
+        parser.error('仅允许本机演示数据库端口 3306 / 13306')
+    if args.base_url.rstrip('/') not in ('http://localhost:8085', 'http://localhost:18085',
+                                         'http://127.0.0.1:8085', 'http://127.0.0.1:18085'):
+        parser.error('仅允许本机商城演示接口')
+    db_password = os.environ.get('MALL_DB_PASSWORD')
+    if db_password is None:
+        db_password = getpass.getpass('演示数据库密码（Compose 默认 mall-local-only）: ')
+    conn = pymysql.connect(host='localhost', port=args.db_port, user=args.db_user,
+                           password=db_password, database='mall', charset='utf8mb4',
                            cursorclass=pymysql.cursors.DictCursor, connect_timeout=5)
-    base = 'http://localhost:8085'
+    del db_password
+    base = args.base_url.rstrip('/')
     report = {'run_id': 'learn-concurrency-' + uuid.uuid4().hex[:12],
               'started_at': datetime.now().isoformat(), 'requests': args.requests,
               'concurrent_workers': args.requests, 'quantity_per_request': args.quantity,
@@ -90,6 +98,11 @@ def main():
         if len(member) != 1:
             raise RuntimeError('测试会员不存在或未启用')
         member_id = member[0]['id']
+        if args.address_id is None:
+            addresses = query('SELECT id FROM ums_member_receive_address WHERE member_id=%s ORDER BY default_status DESC,id LIMIT 1', (member_id,))
+            if not addresses:
+                raise RuntimeError('请先为测试会员添加收货地址')
+            args.address_id = addresses[0]['id']
         if not query('SELECT id FROM ums_member_receive_address WHERE id=%s AND member_id=%s', (args.address_id, member_id)):
             raise RuntimeError('收货地址不属于测试会员')
         sku = query('SELECT id,product_id,price,sku_code FROM pms_sku_stock WHERE id=%s', (args.sku_id,))[0]

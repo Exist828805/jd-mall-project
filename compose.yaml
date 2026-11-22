@@ -1,0 +1,107 @@
+name: mall-study
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: mall
+      MYSQL_USER: mall
+      MYSQL_PASSWORD: ${MALL_DB_PASSWORD:-mall-local-only}
+      MYSQL_ROOT_PASSWORD: ${MALL_DB_ROOT_PASSWORD:-mall-root-local-only}
+    ports: ["127.0.0.1:13306:3306"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./document/sql/mall.sql:/docker-entrypoint-initdb.d/01-mall.sql:ro
+      - ./document/sql/admin-cache-invalidation.sql:/docker-entrypoint-initdb.d/02-cache-task.sql:ro
+      - ./document/sql/local-demo.sql:/docker-entrypoint-initdb.d/03-demo.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -h127.0.0.1 -uroot -e 'SELECT 1' mall"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["127.0.0.1:16379:6379"]
+    volumes: ["redis-data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: mall
+      RABBITMQ_DEFAULT_PASS: ${MALL_RABBIT_PASSWORD:-mall-rabbit-local-only}
+      RABBITMQ_DEFAULT_VHOST: /mall
+    ports: ["127.0.0.1:5673:5672", "127.0.0.1:15673:15672"]
+    volumes: ["rabbit-data:/var/lib/rabbitmq"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+  mongo:
+    image: mongo:7
+    ports: ["127.0.0.1:27018:27017"]
+    volumes: ["mongo-data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: mall-local
+      MINIO_ROOT_PASSWORD: ${MALL_MINIO_SECRET_KEY:-mall-minio-local-only}
+    ports: ["127.0.0.1:19000:9000", "127.0.0.1:19001:9001"]
+    volumes: ["minio-data:/data"]
+  admin:
+    profiles: ["apps"]
+    build: .
+    image: mall-study-backend:local
+    environment:
+      MALL_SERVICE: mall-admin
+      MALL_DB_HOST: mysql
+      MALL_DB_PORT: 3306
+      MALL_DB_PASSWORD: ${MALL_DB_PASSWORD:-mall-local-only}
+      MALL_REDIS_HOST: redis
+      MALL_REDIS_PORT: 6379
+      MALL_MINIO_ENDPOINT: http://minio:9000
+      MALL_MINIO_SECRET_KEY: ${MALL_MINIO_SECRET_KEY:-mall-minio-local-only}
+      MALL_JWT_SECRET: ${MALL_JWT_SECRET:-local-demo-only-change-before-deployment-0123456789-abcdefghijklmnopqrstuvwxyz}
+    ports: ["127.0.0.1:18080:8080"]
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+  portal:
+    profiles: ["apps"]
+    build: .
+    image: mall-study-backend:local
+    environment:
+      MALL_SERVICE: mall-portal
+      MALL_DB_HOST: mysql
+      MALL_DB_PORT: 3306
+      MALL_DB_PASSWORD: ${MALL_DB_PASSWORD:-mall-local-only}
+      MALL_REDIS_HOST: redis
+      MALL_REDIS_PORT: 6379
+      MALL_RABBIT_HOST: rabbitmq
+      MALL_RABBIT_PORT: 5672
+      MALL_RABBIT_PASSWORD: ${MALL_RABBIT_PASSWORD:-mall-rabbit-local-only}
+      MALL_MONGO_HOST: mongo
+      MALL_MONGO_PORT: 27017
+      MALL_JWT_SECRET: ${MALL_JWT_SECRET:-local-demo-only-change-before-deployment-0123456789-abcdefghijklmnopqrstuvwxyz}
+    ports: ["127.0.0.1:18085:8085"]
+    depends_on:
+      mysql: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      rabbitmq: {condition: service_healthy}
+      mongo: {condition: service_healthy}
+volumes:
+  mysql-data:
+  redis-data:
+  rabbit-data:
+  mongo-data:
+  minio-data:

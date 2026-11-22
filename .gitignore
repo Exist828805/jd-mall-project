@@ -1,15 +1,14 @@
-# Maven #
+# Build output and IDE metadata
 target/
-
-# IDEA #
 .idea/
 *.iml
-
-# Eclipse #
 .settings/
 .classpath
 .project
-# Local secrets and generated files
+node_modules/
+.DS_Store
+
+# Local credentials
 .env
 .env.*
 !.env.example
@@ -17,6 +16,15 @@ application-local.yml
 application-local.yaml
 *.pem
 *.key
+config/
+
+# Public demo profiles (no personal credentials)
+!mall-admin/src/main/resources/application-local.yml
+!mall-portal/src/main/resources/application-local.yml
+!mall-search/src/main/resources/application-local.yml
+
+# Generated logs and Python cache
 *.log
+logs/
 __pycache__/
 *.pyc
