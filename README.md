@@ -59,8 +59,8 @@ Dockerfile         从源码构建后端镜像
 需要 Git、Docker Engine/Docker Desktop 与支持 profiles 的 Docker Compose v2。首次构建需要联网下载镜像及 Maven 依赖，建议预留至少 6 GB 内存。
 
 ```bash
-git clone https://github.com/Exist828805/mall-study.git
-cd mall-study
+git clone https://github.com/Exist828805/jd-mall-project.git
+cd jd-mall-project
 docker compose --profile apps up -d --build
 ```
 

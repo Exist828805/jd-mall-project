@@ -19,13 +19,13 @@ export const constantRouterMap: RouteRecordExt[] = [
       },
       {
         name: 'document',
-        path: 'https://github.com/Exist828805/mall-study',
+        path: 'https://github.com/Exist828805/jd-mall-project',
         component: () => import('@/views/normal/link/index.vue'),
         meta: { title: '项目源码', icon: 'document' },
       },
       {
         name: 'video',
-        path: 'https://github.com/Exist828805/mall-study#readme',
+        path: 'https://github.com/Exist828805/jd-mall-project#readme',
         component: () => import('@/views/normal/link/index.vue'),
         meta: { title: '项目说明', icon: 'video' },
       },

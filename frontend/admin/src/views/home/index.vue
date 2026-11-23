@@ -198,7 +198,7 @@ const chartOption = computed(() => {
           <div class="out-border">
             <div class="layout-title">仿京东商城项目</div>
             <div class="color-main address-content">
-              <a href="https://github.com/Exist828805/mall-study" target="_blank">查看项目源码</a>
+              <a href="https://github.com/Exist828805/jd-mall-project" target="_blank">查看项目源码</a>
             </div>
           </div>
         </el-col>
@@ -206,7 +206,7 @@ const chartOption = computed(() => {
           <div class="out-border">
             <div class="layout-title">启动与功能说明</div>
             <div class="color-main address-content">
-              <a href="https://github.com/Exist828805/mall-study#readme" target="_blank">阅读项目文档</a>
+              <a href="https://github.com/Exist828805/jd-mall-project#readme" target="_blank">阅读项目文档</a>
             </div>
           </div>
         </el-col>
