@@ -28,3 +28,11 @@ config/
 logs/
 __pycache__/
 *.pyc
+
+# Public frontend build configuration (local credentials belong in .env.local).
+!frontend/admin/.env
+!frontend/admin/.env.development
+!frontend/admin/.env.production
+!frontend/storefront/.env
+!frontend/storefront/.env.development
+!frontend/storefront/.env.production

@@ -1,8 +1,22 @@
-# mall-study｜电商后端学习与改进项目
+# 仿京东商城项目
 
-基于 [macrozheng/mall](https://github.com/macrozheng/mall) 的电商系统学习项目，围绕商品、订单、库存、缓存与消息消费进行增量改进。保留上游源码和 [LICENSE](LICENSE)，具体贡献与验证范围见下文。
+一个包含商城客户端、管理后台与 Java 后端的电商二次开发项目，围绕商品浏览、购物车、订单、库存与后台管理组织业务，并对库存状态竞争、消息消费异常和缓存失效补偿进行改进。
 
-**仓库包含可编译的 Java 源码、数据库结构及示例数据、增量 SQL、测试代码与本地启动配置。当前交付为后端工程，通过 Swagger 操作接口；不包含独立的仿京东商城页面或后台前端源码。** 上游演示与前端地址见 [上游 README](README.upstream.md)。
+基于 [macrozheng/mall](https://github.com/macrozheng/mall) 二次开发；商城与后台页面分别接入 [mall-app-web](https://github.com/macrozheng/mall-app-web) 和 [mall-admin-web](https://github.com/macrozheng/mall-admin-web) 的源码，完成本地配置、项目展示与演示账号适配。保留各上游许可证、来源版本与原始说明。基础框架和主要前端页面来自上游，本人的增量工作见下表。
+
+**仓库包含前后端源码、数据库及示例数据、测试和运行配置。商城客户端为移动端 H5，后台为桌面管理页面；可在浏览器运行。**
+
+## 页面展示
+
+以下截图来自本项目在本地连接新建演示数据库的运行画面，数据为初始化脚本中的公开样例。
+
+### 商品管理
+
+![后台商品列表](document/screenshots/admin-products.png)
+
+### 商城客户端（H5）
+
+<img src="document/screenshots/storefront-home.png" alt="商城 H5 首页" width="380">
 
 ## 功能与改进
 
@@ -18,11 +32,13 @@
 | 缓存删除补偿 | 业务与失效任务同事务保存；提交后删缓存，失败留存定时重试 | 自动化事务测试与真实 MySQL/Redis 故障恢复 |
 | 业务校验 | 品牌参数、商品状态批量校验及订单管理接口调整 | 以仓库实现与实验记录为准 |
 
-实现边界：这是学习项目的有限正确性验证，不是生产压测；不承诺所有路径强一致、消息零丢失或所有并发场景无超卖。缓存补偿覆盖管理员资料更新路径；失败消息恢复采用人工重新发送同一订单 ID；支付业务不代表已验收真实资金闭环。增量实现由 AI 协作编写、本人参与验证与学习。
+实现边界：这是学习项目的有限正确性验证，不是生产压测；不承诺所有路径强一致、消息零丢失或所有并发场景无超卖。缓存补偿覆盖管理员资料更新路径；失败消息恢复采用人工重新发送同一订单 ID；支付业务不代表已验收真实资金闭环。
 
 ## 目录与技术栈
 
 ```text
+frontend/admin/    Vue 3 + Element Plus 管理后台
+frontend/storefront/  Vue 3 + uni-app 商城客户端（H5）
 mall-common/       通用工具、公共配置及接口返回
 mall-mbg/          数据库模型及 MyBatis Mapper
 mall-security/     Spring Security、JWT 与缓存相关封装
@@ -36,7 +52,7 @@ compose.yaml       独立本地中间件与可选后端容器
 Dockerfile         从源码构建后端镜像
 ```
 
-技术栈以 `pom.xml` 为准：Java 17、Maven 3.9、Spring Boot 3.5.14、Spring Security、MyBatis、MySQL、Redis、RabbitMQ、MongoDB；对象存储使用 MinIO，搜索模块使用 Elasticsearch。运行核心后台和商城接口无需 Elasticsearch、Logstash 或 Kibana。
+后端技术栈以 `pom.xml` 为准：Java 17、Maven 3.9、Spring Boot 3.5.14、Spring Security、MyBatis、MySQL、Redis、RabbitMQ、MongoDB；对象存储使用 MinIO，搜索模块使用 Elasticsearch。运行核心后台和商城接口无需 Elasticsearch、Logstash 或 Kibana。
 
 ## 方式一：Docker 启动后端和依赖
 
@@ -124,6 +140,58 @@ Java / IDEA 不会自动读取根目录 `.env`；修改凭据时需要把对应 
 
 如果已经有自己的中间件，可通过这些变量连接自己的**演示环境**，并按上面的顺序手动导入三个 SQL；数据库账户需有建表与业务读写权限。无需使用任何作者私有账号、密钥或虚拟机 IP。
 
+## 启动前端页面
+
+先按上文启动后端和依赖，然后启动两套前端。需要 Node.js（后台要求 `^20.19.0 || >=22.12.0`；本次使用 24.18.0 验证）与 npm。
+
+### 管理后台
+
+在仓库根目录新开终端：
+
+```bash
+cd frontend/admin
+npm ci
+npm run dev
+```
+
+访问 http://localhost:5174 ，使用 `admin` / `admin123` 登录。默认 API 为 `http://localhost:8080`。
+
+### 商城客户端
+
+在仓库根目录再开终端：
+
+```bash
+cd frontend/storefront
+npm ci
+npm run dev:h5
+```
+
+访问 http://localhost:5173 ，建议使用手机视图；会员账号为 `demo` / `demo123`。默认 API 为 `http://localhost:8085`，第三方支付宝支付默认关闭。
+
+### 使用 Docker 后端或修改 API 地址
+
+根 Compose 的 `apps` profile 只启动后端和中间件，前端页面仍按上面 npm 命令启动。
+
+如果后端用 Docker 的 18080 / 18085 端口，在 `frontend/admin/.env.development.local` 写入：
+
+```dotenv
+VITE_BASE_SERVER_URL=http://localhost:18080
+```
+
+在 `frontend/storefront/.env.development.local` 写入：
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:18085
+```
+
+修改后重启前端开发服务器。`*.local` 属于本地配置，不提交仓库；构建生产包的对应覆盖文件是 `.env.production.local`。仓库中的公开默认配置均连接本地后端，不会把登录请求发送到上游在线演示服务。
+
+### 前端构建
+
+后台执行 `npm run build`（包含 TypeScript 检查），生成 `frontend/admin/dist`；商城执行 `npm run build:h5`，生成 `frontend/storefront/dist/build/h5`。构建产物不提交 Git，仓库保留源代码和依赖锁文件，下载后可自行构建。
+
+后台首页的统计卡片和图表沿用上游样例并明确标注，不作为实时经营统计；商品列表等业务页面实际调用后端。前端来源和改动范围见 [后台来源记录](frontend/admin/UPSTREAM.md)、[商城来源记录](frontend/storefront/UPSTREAM.md)。
+
 ## 第一次验证
 
 1. 打开后台 Swagger，执行 `POST /admin/login`，JSON 请求体：
@@ -157,6 +225,12 @@ mvn "-Ddocker.skip=true" "-DskipTests=false" "-Dtest=AdminCacheInvalidationServi
 
 开发环境的 Docker 安装在 VMware Linux 虚拟机中，既有 Redis、RabbitMQ 由其运行；Windows 当前终端没有可用的 Docker CLI。本次发布的 **Dockerfile / Compose 尚未在该虚拟机中进行完整容器实跑验收**，MySQL 8.0 容器初始化也未单独实测。上述 Java 运行验证使用新建数据库及已有 Redis，并关闭验证进程的 RabbitMQ 消费；本次未重新执行下单、第三方支付、MinIO 上传或 Elasticsearch 搜索链路。运行环境与验证范围在这里明确列出，不将配置文件检查等同于容器运行通过。
 
+## 前端接入验证（2026-11-23）
+
+- 两套前端均完成 `npm ci` 和生产构建，管理后台 TypeScript 检查通过。
+- 使用独立 MySQL 演示实例与实际打包后的后端进行浏览器联调：管理员登录、后台商品列表、商城会员登录和首页商品数据显示已通过。
+- 页面截图保存在 `document/screenshots/`；本次未扩大为全量前端业务回归，支付、搜索和全部编辑操作仍需相应服务与独立验收。
+
 ## 扩展模块与功能边界
 
 - `mall-search` 源码已包含，但默认 Compose 未启动 Elasticsearch；使用该模块需另行配置与当前 Spring Data Elasticsearch 兼容的服务及代码中用到的中文分词插件，再导入商品索引。它不是核心后台、首页与订单接口的启动前置条件。
@@ -176,4 +250,10 @@ mvn "-Ddocker.skip=true" "-DskipTests=false" "-Dtest=AdminCacheInvalidationServi
 
 ## 来源与许可
 
-原项目：[macrozheng/mall](https://github.com/macrozheng/mall)。上游文档见 [README.upstream.md](README.upstream.md)，许可见 [LICENSE](LICENSE)。基础商城架构与大部分业务代码来自上游，本仓库重点展示上表中的增量改进及可复现材料。
+后端来源：[macrozheng/mall](https://github.com/macrozheng/mall)，[上游文档](README.upstream.md)、[许可证](LICENSE)。
+
+后台前端来源：[macrozheng/mall-admin-web](https://github.com/macrozheng/mall-admin-web)，[许可证](frontend/admin/LICENSE)、[导入版本与修改记录](frontend/admin/UPSTREAM.md)。
+
+商城前端来源：[macrozheng/mall-app-web](https://github.com/macrozheng/mall-app-web)，[许可证](frontend/storefront/LICENSE.txt)、[导入版本与修改记录](frontend/storefront/UPSTREAM.md)。
+
+基础商城架构与大部分业务代码来自上述上游，本仓库重点展示增量改进、前后端整合与可复现材料。
