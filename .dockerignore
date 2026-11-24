@@ -3,6 +3,9 @@
 **/target
 **/node_modules
 **/*.log
+logs/
+**/__pycache__
+.docker-queue-state.json
 .env
 .env.*
 !.env.example

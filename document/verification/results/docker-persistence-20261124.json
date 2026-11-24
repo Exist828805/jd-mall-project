@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "verified_at": "2026-11-24T09:44:16.830370+00:00",
+  "scope": "Compose down/up 保留卷，RabbitMQ 固定 hostname 后重建",
+  "rabbit_hostname": "rabbitmq",
+  "durable_queue_recovered": true,
+  "persistent_message_payload_matched": true,
+  "marker_queue_deleted": true
+}

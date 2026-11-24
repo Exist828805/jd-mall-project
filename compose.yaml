@@ -30,6 +30,7 @@ services:
       retries: 20
   rabbitmq:
     image: rabbitmq:3-management
+    hostname: rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: mall
       RABBITMQ_DEFAULT_PASS: ${MALL_RABBIT_PASSWORD:-mall-rabbit-local-only}

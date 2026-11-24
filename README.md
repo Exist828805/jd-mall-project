@@ -86,6 +86,14 @@ docker compose logs --tail=100 admin portal
 
 以上均为仓库公开的本地演示凭据，只绑定本机端口，不用于公网部署。上传文件时自动创建 `mall` 存储桶；返回的图片地址使用浏览器可访问的 `http://localhost:19000`。
 
+如果 Docker 安装在 Linux 虚拟机里，上述 `localhost` 指虚拟机本身。先把源码放入虚拟机并在其中执行 Compose；然后在 Windows 新开终端建立 SSH 端口转发（把 `用户名`、`虚拟机IP` 替换为自己的登录信息）：
+
+```bash
+ssh -N -L 18080:127.0.0.1:18080 -L 18085:127.0.0.1:18085 -L 19000:127.0.0.1:19000 用户名@虚拟机IP
+```
+
+保持该终端运行，即可在 Windows 用上述后台/商城接口地址访问，也可让本地前端连接它们。MinIO 图片地址通过同一条转发访问；如果需要管理控制台，可另外转发 `19001` 和 `15673`。无需开放 Docker 远程管理端口。
+
 可复制 `.env.example` 为 `.env` 调整 Compose 密码与 JWT 密钥；`.env` 不提交到仓库。已有 MySQL/RabbitMQ 数据卷不会因为修改 `.env` 自动修改原账号密码，变更现有环境时应同步更新对应服务中的凭据。
 
 停止服务并保留数据：
@@ -207,6 +215,14 @@ VITE_API_BASE_URL=http://localhost:18085
 
 ## 自动化验证与实验材料
 
+Docker 核心接口可用 Python 3 标准库脚本复查；它会创建并清理本轮 MongoDB 浏览记录和 MinIO 文件，仅用于隔离演示环境：
+
+```bash
+python document/verification/docker_smoke.py --run --output document/verification/results/docker-smoke-local.json
+```
+
+先等后台和商城日志出现 `Started`；在 Docker 主机上运行，或在 Windows 建立上文 SSH 转发后运行。检查范围及基础服务核验见 [验证说明](document/verification/README.md#docker-核心接口冒烟)。
+
 缓存补偿事务测试不依赖外部 MySQL / Redis，使用 H2 与 mock：
 
 ```bash
@@ -223,13 +239,23 @@ mvn "-Ddocker.skip=true" "-DskipTests=false" "-Dtest=AdminCacheInvalidationServi
 - 启动打包后的两个服务，后台 / 商城 Swagger 页面和分组文档可用，分别包含 160 / 65 个接口；演示管理员登录、带 JWT 的商品查询、演示会员登录和首页数据读取通过。
 - YAML 配置语法及文档本地链接检查通过。
 
-开发环境的 Docker 安装在 VMware Linux 虚拟机中，既有 Redis、RabbitMQ 由其运行；Windows 当前终端没有可用的 Docker CLI。本次发布的 **Dockerfile / Compose 尚未在该虚拟机中进行完整容器实跑验收**，MySQL 8.0 容器初始化也未单独实测。上述 Java 运行验证使用新建数据库及已有 Redis，并关闭验证进程的 RabbitMQ 消费；本次未重新执行下单、第三方支付、MinIO 上传或 Elasticsearch 搜索链路。运行环境与验证范围在这里明确列出，不将配置文件检查等同于容器运行通过。
+当日 Java 验证使用新建数据库及已有 Redis，并关闭了验证进程的 RabbitMQ 消费；当时未执行完整 Docker 验收。后续 Docker 实跑结果见下文，历史本地验证与容器验证分别记录。
 
 ## 前端接入验证（2026-11-23）
 
 - 两套前端均完成 `npm ci` 和生产构建，管理后台 TypeScript 检查通过。
 - 使用独立 MySQL 演示实例与实际打包后的后端进行浏览器联调：管理员登录、后台商品列表、商城会员登录和首页商品数据显示已通过。
 - 页面截图保存在 `document/screenshots/`；本次未扩大为全量前端业务回归，支付、搜索和全部编辑操作仍需相应服务与独立验收。
+
+## Docker 实跑验收（2026-11-24）
+
+- 在独立 Compose 项目和新建数据卷中，完成 Dockerfile 源码构建及 `apps` profile 启动，7 个服务均运行成功。
+- MySQL 8.0.46 自动执行三个初始化 SQL，生成 77 张表、演示账号和地址；Redis、RabbitMQ、MongoDB 健康检查及 MinIO 健康接口通过。
+- 重建容器后，后台/商城接口文档、两端登录、受保护商品列表、首页、MongoDB 浏览记录、MinIO 上传与公开读取等 10 项冒烟检查全部通过，测试数据清理成功。
+- 单笔订单验证：SKU 99 锁定库存 `0 → 1 → 0`，RabbitMQ 延迟消息在测试超时后自动关单；原超时设置恢复，测试订单软删除。
+- 补充 RabbitMQ 固定主机名，验证 `down` / `up` 保留数据卷后持久队列和消息内容仍可恢复；MySQL 中订单和库存记录保留正确。
+
+环境、操作、数据快照和边界见 [Docker 验收记录](document/verification/docker-acceptance-20261124.md)。Compose 范围是中间件和两个后端；前端仍按上文 npm 方式启动，本轮未扩大为全部前端操作、真实支付或搜索回归。
 
 ## 扩展模块与功能边界
 

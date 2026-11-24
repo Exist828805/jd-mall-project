@@ -28,6 +28,7 @@ config/
 logs/
 __pycache__/
 *.pyc
+.docker-queue-state.json
 
 # Public frontend build configuration (local credentials belong in .env.local).
 !frontend/admin/.env

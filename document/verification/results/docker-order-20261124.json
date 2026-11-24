@@ -1,0 +1,24 @@
+{
+  "scope": "隔离 Docker 演示库单笔下单、RabbitMQ 延迟关单及库存对账；无真实支付",
+  "run_id": "docker-order-5df730c6ebf7",
+  "sku_id": 99,
+  "before": {
+    "stock": 100,
+    "lock_stock": 0
+  },
+  "cart_id": 116,
+  "temporary_timeout_minutes": 1,
+  "order_id": 78,
+  "timeout_setting_restored": true,
+  "after_order": {
+    "stock": 100,
+    "lock_stock": 1
+  },
+  "after_auto_cancel": {
+    "stock": 100,
+    "lock_stock": 0
+  },
+  "order_status": 4,
+  "closed_test_order_soft_deleted": true,
+  "passed": true
+}

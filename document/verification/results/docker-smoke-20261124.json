@@ -1,0 +1,82 @@
+{
+  "started_at": "2026-11-24T09:44:49.177581+00:00",
+  "scope": "Docker 核心接口冒烟；不代表订单、支付或全量回归通过",
+  "checks": [
+    {
+      "name": "admin Swagger/OpenAPI",
+      "passed": true,
+      "detail": {
+        "paths": 160
+      }
+    },
+    {
+      "name": "portal Swagger/OpenAPI",
+      "passed": true,
+      "detail": {
+        "paths": 65
+      }
+    },
+    {
+      "name": "admin demo login",
+      "passed": true,
+      "detail": {
+        "authenticated": true
+      }
+    },
+    {
+      "name": "protected product list",
+      "passed": true,
+      "detail": {
+        "total": 20
+      }
+    },
+    {
+      "name": "member demo login",
+      "passed": true,
+      "detail": {
+        "authenticated": true
+      }
+    },
+    {
+      "name": "seeded storefront home",
+      "passed": true,
+      "detail": {
+        "sections": [
+          "advertiseList",
+          "brandList",
+          "homeFlashPromotion",
+          "newProductList",
+          "hotProductList",
+          "subjectList"
+        ]
+      }
+    },
+    {
+      "name": "MongoDB history write/read",
+      "passed": true,
+      "detail": {
+        "created_and_read": true
+      }
+    },
+    {
+      "name": "MinIO upload/public read",
+      "passed": true,
+      "detail": {
+        "uploaded_and_publicly_read": true
+      }
+    },
+    {
+      "name": "MongoDB test record cleanup",
+      "passed": true,
+      "detail": 1
+    },
+    {
+      "name": "MinIO test object cleanup",
+      "passed": true,
+      "detail": {
+        "deleted_and_not_found": true
+      }
+    }
+  ],
+  "passed": true
+}

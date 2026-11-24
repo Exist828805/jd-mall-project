@@ -45,3 +45,29 @@ python document/verification/concurrent_orders.py --base-url http://localhost:18
 全部对账通过后，脚本调用业务关单接口关闭本轮订单，核对锁定库存恢复基线，再软删除本轮购物车。测试订单及原延迟消息保留，后续按订单状态幂等结束。
 
 `results/` 每次保存一份 JSON 报告，包含基线、逐请求结果、对账及关单结果，不记录密码或 token。耗时数据仅用于该次排错，不代表生产性能。
+
+## Docker 核心接口冒烟
+
+按根 README 的 Docker 方案启动服务，等两个后端日志出现 `Started` 后，在同一台机器执行（Python 3，无第三方依赖）：
+
+```bash
+python3 document/verification/docker_smoke.py --run --output document/verification/results/docker-smoke-local.json
+```
+
+脚本使用本机 `18080` / `18085` / `19000` 端口和公开演示账号，检查两端 Swagger/OpenAPI、管理员和会员登录、受保护商品列表、首页、MongoDB 浏览记录写入读取、MinIO 上传及公开地址读取。它会清理本轮创建的浏览记录和文件，不创建订单、不修改库存；报告不保存密码或 JWT。文件清理使用本地 MinIO 管理凭据直接签名调用存储接口，默认值匹配 Compose；修改过凭据时需设置 `MALL_MINIO_ACCESS_KEY` / `MALL_MINIO_SECRET_KEY`。初始化权限数据没有授权应用的 `/minio/delete`，脚本不会为此修改应用权限。仅在独立演示环境运行，避免同时手工修改演示会员的浏览记录。
+
+该脚本不代替基础服务验收：还应查看 `docker compose --profile apps ps` 的运行/健康状态、MySQL 三个初始化脚本的执行情况、Redis `PING` 和 RabbitMQ 队列消费者连接。脚本通过也不代表支付、搜索或全部业务通过。
+
+### RabbitMQ 容器重建与消息保留
+
+根 Compose 为 RabbitMQ 固定 `hostname: rabbitmq`，使其重建后继续使用同一个节点数据目录。在独立演示环境确认服务就绪后执行：
+
+```bash
+python3 document/verification/docker_queue_persistence.py prepare --state .docker-queue-state.json
+docker compose --profile apps down
+docker compose --profile apps up -d --no-build
+# 等待 RabbitMQ healthy，再执行核对和清理
+python3 document/verification/docker_queue_persistence.py verify --state .docker-queue-state.json
+```
+
+脚本通过本机 `15673` 的管理 API 创建独立持久队列和一条 `delivery_mode=2` 的测试消息，重建后比对消息内容，再删除测试队列。它不操作订单队列；只在 Compose 演示环境使用，不要添加 `down -v`。修改了 RabbitMQ 密码时设置 `MALL_RABBIT_PASSWORD`；Docker 在虚拟机里时，需要额外转发 `15673`。状态文件仅保存随机测试标记，核对成功后自动删除。
